@@ -264,10 +264,10 @@ class Main
     }
     
 
-    public function getResults($manv = '', $day = '', $month = '', $year = '', $test_name = '',$department_name='')
+    public function getResults($manv = '', $day = '', $month = '', $year = '', $test_name = '',$department_name='', $code='')
     {
         // Gọi stored procedure thay cho việc viết SQL phức tạp
-        $sql = "CALL armcuff.getCheckAnswerUser(:day,:month, :year, :manv,:test_name,:department_name)";
+        $sql = "CALL armcuff.getCheckAnswerUser(:day,:month, :year, :manv,:test_name,:department_name,:code)";
 
         // Chuẩn bị câu truy vấn
         $stmt = $this->db->prepare($sql);
@@ -280,6 +280,7 @@ class Main
         $stmt->bindValue(':year', $year === '' ? null : $year, PDO::PARAM_INT);
         $stmt->bindValue(':test_name', $test_name === '' ? null : $test_name, PDO::PARAM_STR);
         $stmt->bindValue(':department_name', $department_name === '' ? null : $department_name, PDO::PARAM_STR);
+        $stmt->bindValue(':code', $code === '' ? null : $code, PDO::PARAM_STR);
         // Thực thi câu truy vấn
         $stmt->execute();
 

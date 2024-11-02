@@ -1,8 +1,9 @@
 <?php
-session_start(); // Bắt đầu phiên
-
 require_once './lib/Database.php';
 include 'notifications/notifications.php';
+session_start(); // Bắt đầu phiên
+
+
 // Thông tin LDAP server
 $ldap_host = "ldap://ctmatsuyard.com";
 $ldap_port = 389;
@@ -26,7 +27,19 @@ if ($ldap_conn) {
     $ldap_user = "$username@ctmatsuyard.com";
 
     // Xác thực với LDAP
-    $ldap_bind = ldap_bind($ldap_conn, $ldap_user, $password);
+    $ldap_bind = @ldap_bind($ldap_conn, $ldap_user, $password);
+
+    if ($ldap_bind) {
+        echo "LDAP bind successful!";
+    } else {
+        // Lưu thông báo vào session
+        $_SESSION['error_message'] = 'Xác thực thất bại. Vui lòng kiểm tra tên đăng nhập và mật khẩu.';
+        
+        // Chuyển hướng về trang login
+        header("Location: login.php");
+        exit(); // Dừng thực thi mã sau khi chuyển hướng
+    }
+    
 
     if ($ldap_bind) {
         // Tìm kiếm `sAMAccountName` và `displayName` từ LDAP
@@ -51,7 +64,7 @@ if ($ldap_conn) {
 
                 // Kết nối và lưu thông tin người dùng vào cơ sở dữ liệu
                 try {
-                    $db = new Database('localhost', 'armcuff', 'root', '');
+                    $db = new Database('localhost:3308', 'armcuff', 'root', '');
                     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                     $procedureName = 'sp_insert_update_users';
                     $params = [$manv, $displayName, $username, $hashed_password, $isDeleted, $isActive, $code, $userType];

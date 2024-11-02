@@ -182,7 +182,7 @@ $testDetails = $exam->getQuestionsAndAnswers($test_id); // Lấy câu hỏi và 
                     foreach ($questions as $question_id => $question_info): ?>
                         <div class="form-group mb-4">
                             <label class="question-label">
-                                <?php echo htmlspecialchars($question_info['question']); ?>
+                            <?php echo $question_info['question']; ?>
 
                                 <?php if (!empty($question_info['question_image'])): ?>
                                     <img src="<?php echo htmlspecialchars($question_info['question_image']); ?>" alt="Question Image" style="max-width: 100%; height: auto;">
@@ -213,7 +213,7 @@ $testDetails = $exam->getQuestionsAndAnswers($test_id); // Lấy câu hỏi và 
                                             <?php if (!empty($answer['answer_image'])): ?>
                                                 <img src="<?php echo htmlspecialchars($answer['answer_image']); ?>" alt="Answer Image" style="max-width: 100%; height: auto;">
                                             <?php endif; ?>
-                                        </label>+
+                                        </label>
                                     </div>
                                 <?php endforeach; ?>
                             </div>

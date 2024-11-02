@@ -48,7 +48,7 @@ $html = '
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        .header {
+        .header { 
             text-align: center;
             background-color: #28a745;
             color: #fff;
@@ -150,7 +150,9 @@ foreach ($testDetails as $detail) {
 
 foreach ($questions as $question_id => $question_info) {
     $html .= '<div class="form-group">
-                <label class="question">' . htmlspecialchars($question_info['question_text']);
+    <label class="question">' . $question_info['question_text'] . '</label>
+</div>';
+
 
     if (isset($userAnswers[$question_id])) {
         $userAnswer = $userAnswers[$question_id];
@@ -188,7 +190,7 @@ foreach ($questions as $question_id => $question_info) {
 
         // Hiển thị hình ảnh câu trả lời nếu có
         if (!empty($answer['answer_image'])) {
-            $html .= '<img src="http://localhost:8009/Training/armcuffnew/admin/' . htmlspecialchars($answer['answer_image']) . '" class="image" alt="Hình ảnh câu trả lời">';
+            $html .= '<br>  <img src="http://localhost:8009/Training/armcuffnew/admin/' . htmlspecialchars($answer['answer_image']) . '" class="image" alt="Hình ảnh câu trả lời">';
         }
 
         $html .= '</div>';

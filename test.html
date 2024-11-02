@@ -1,124 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
+CREATE DEFINER=`root`@`localhost` PROCEDURE `getCheckAnswerUser`(
+    IN day INT,
+    IN month INT,
+    IN year INT,
+    IN manv VARCHAR(50),
+    IN test_name VARCHAR(255),
+    IN department_name VARCHAR(255)  -- Thêm tham số department_name
+)
+BEGIN
+    SELECT
+        ROW_NUMBER() OVER (ORDER BY ua.manv, mt.name) AS STT,  -- Sắp xếp theo manv trước
+        ua.manv,
+        u.fullname,
+        d.name AS department_name,  -- Thêm tên phòng ban từ bảng department
+        mt.name AS test_name,
+        ua.code,  -- Thêm cột code từ bảng user_answer
+        COUNT(CASE WHEN ua.answer = 1 THEN 1 END) AS correct_answers,
+        COUNT(*) AS total_questions,
+        MAX(ua.created_at) AS test_date,
+        ROUND(COUNT(CASE WHEN ua.answer = 1 THEN 1 END) / COUNT(*) * 100) AS score,
+        CASE 
+            WHEN ROUND(COUNT(CASE WHEN ua.answer = 1 THEN 1 END) / COUNT(*) * 100) = 100 THEN 'Đạt' 
+            ELSE 'Không Đạt' 
+        END AS result_status,
+        mt.id AS test_id
+    FROM user_answer ua
+        JOIN users u ON ua.manv = u.manv
+        JOIN manage_test mt ON ua.test_id = mt.id
+        LEFT JOIN department d ON ua.department_id = d.id  -- Sửa lại join theo user_answer.department_id
+    WHERE (manv IS NULL OR ua.manv = manv)
+      AND (day IS NULL OR DAY(ua.created_at) = day)
+      AND (month IS NULL OR MONTH(ua.created_at) = month)
+      AND (year IS NULL OR YEAR(ua.created_at) = year)
+      AND (department_name IS NULL OR d.name LIKE CONCAT('%', department_name, '%'))  -- Lọc theo department_name
+      AND (test_name IS NULL OR mt.name LIKE CONCAT('%', test_name, '%'))  -- Lọc theo tên bài test
+    GROUP BY ua.manv,
+             u.fullname,
+             d.name,  -- Thêm department name vào GROUP BY
+             mt.name,
+             mt.id,
+             ua.code  -- Thêm ua.code vào GROUP BY
+    ORDER BY ua.manv ASC, mt.name;  -- Sắp xếp theo manv tăng dần
+END
+<span>V. Xử lý sự cố bất thường:</span><br> <hr>1. Chọn đáp án đúng?
+     				
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <title>Home - Armcuff Forms</title>
-    <style>
-        .hero-section {
-            background-image: url('https://raw.githubusercontent.com/creativetimofficial/public-assets/master/argon-dashboard-pro/assets/img/signup-cover.jpg');
-            background-size: cover;
-            background-position: center;
-            padding: 100px 0;
-            color: white;
-            text-align: center;
-            position: relative;
-        }
 
-        .hero-section .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-        }
 
-        .hero-section h1 {
-            z-index: 1;
-            position: relative;
-        }
 
-        .hero-section p {
-            z-index: 1;
-            position: relative;
-        }
+1. Khi phát sinh hàng lỗi hoặc NL lỗi 
 
-        .card-section {
-            padding: 50px 0;
-        }
 
-        .card-custom {
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-    </style>
-</head>
 
-<body>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container">
-            <a class="navbar-brand" href="#">Armcuff Forms</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Sign In</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Sign Up</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
 
-    <!-- Hero Section -->
-    <div class="hero-section">
-        <div class="overlay"></div>
-        <h1>Welcome to Armcuff Forms</h1>
-        <p>Your gateway to efficient exam management</p>
-    </div>
 
-    <!-- Cards Section -->
-    <div class="container card-section">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card card-custom p-4 text-center">
-                    <h5 class="card-title">Manage Exams</h5>
-                    <p class="card-text">Create and manage online tests effortlessly.</p>
-                    <a href="#" class="btn btn-primary">Go to Exams</a>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card card-custom p-4 text-center">
-                    <h5 class="card-title">Track Results</h5>
-                    <p class="card-text">Easily track student performance and results.</p>
-                    <a href="#" class="btn btn-primary">View Results</a>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card card-custom p-4 text-center">
-                    <h5 class="card-title">Settings</h5>
-                    <p class="card-text">Customize settings for your exam management needs.</p>
-                    <a href="#" class="btn btn-primary">Adjust Settings</a>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Footer -->
-    <footer class="text-center py-4">
-        <p>&copy; 2024 Armcuff Forms. All rights reserved.</p>
-    </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+				
 
-</html>
+
+
+
+			
+
+
+
+
+
+
+				
+
+
+
+						

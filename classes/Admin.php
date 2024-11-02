@@ -23,7 +23,7 @@ class Admin
     
         // Kiểm tra xem tên đăng nhập hoặc mật khẩu có rỗng không
         if (empty($adminUser) || empty($adminPass)) {
-            return "<span class='error'>Tên đăng nhập hoặc mật khẩu không được để trống</span>";
+            return "<span class='alert alert-danger'>Tên đăng nhập hoặc mật khẩu không được để trống</span>";
         }
     
         try {
@@ -39,7 +39,7 @@ class Admin
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            return "<span class='error'>Lỗi truy vấn: " . $e->getMessage() . "</span>";
+            return "<span class='alert alert-danger'>Lỗi truy vấn: " . $e->getMessage() . "</span>";
         }
     
         // Kiểm tra kết quả và mật khẩu
@@ -63,10 +63,10 @@ class Admin
                 header('Location: index.php');
                 exit();
             } else {
-                return "<span class='error'>Bạn không có quyền truy cập admin</span>";
+                return "<span class='alert alert-danger'>Bạn không có quyền truy cập admin</span>";
             }
         } else {
-            return "<span class='error'>Tên đăng nhập hoặc mật khẩu không chính xác</span>";
+            return "<span class='alert alert-danger'>Tên đăng nhập hoặc mật khẩu không chính xác</span>";
         }
     }
 
@@ -90,7 +90,7 @@ class Admin
     
         // Kiểm tra các trường nhập có bị rỗng hay không
         if (empty($adminUser) || empty($currentPass) || empty($newPass)) {
-            return "<span class='error'>Vui lòng điền đầy đủ thông tin</span>";
+            return "<span class='alert alert-danger'>Vui lòng điền đầy đủ thông tin</span>";
         }
     
         try {
@@ -100,7 +100,7 @@ class Admin
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            return "<span class='error'>Lỗi truy vấn: " . $e->getMessage() . "</span>";
+            return "<span class='alert alert-danger'>Lỗi truy vấn: " . $e->getMessage() . "</span>";
         }
     
         if ($result && password_verify($currentPass, $result['password'])) {
@@ -112,12 +112,12 @@ class Admin
                 $updateStmt->bindValue(':username', $adminUser, PDO::PARAM_STR);
                 $updateStmt->execute();
             } catch (PDOException $e) {
-                return "<span class='error'>Lỗi cập nhật mật khẩu: " . $e->getMessage() . "</span>";
+                return "<span class='alert alert-danger'>Lỗi cập nhật mật khẩu: " . $e->getMessage() . "</span>";
             }
     
             return "<span class='success'>Đổi mật khẩu thành công!</span>";
         } else {
-            return "<span class='error'>Mật khẩu hiện tại không chính xác</span>";
+            return "<span class='alert alert-danger'>Mật khẩu hiện tại không chính xác</span>";
         }
     }
 }

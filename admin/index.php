@@ -1,44 +1,168 @@
 <?php
-// session_start(); // Mở session
+$filepath = realpath(dirname(__FILE__));
+include_once('../config/config.php');
+// Kết nối đến cơ sở dữ liệu
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+// Kiểm tra kết nối
+if ($conn->connect_error) {
+  die("Kết nối không thành công: " . $conn->connect_error);
+}
+// Tháng hiện tại
+$currentMonth = date('m');
+$currentYear = date('Y');
+// Tháng trước
+$previousMonth = $currentMonth - 1;
+$previousYear = $currentYear;
+if ($previousMonth == 0) {
+  $previousMonth = 12;
+  $previousYear -= 1;
+}
+// Khởi tạo các biến để lưu trữ dữ liệu
+$currentData = ['totalTests' => 0, 'totalUsers' => 0, 'passedCount' => 0, 'failedCount' => 0, 'totalScore' => 0];
+$previousData = ['totalTests' => 0, 'totalUsers' => 0, 'passedCount' => 0, 'failedCount' => 0, 'totalScore' => 0];
+// Hàm để lấy dữ liệu cho tháng nhất định
+function getDataByMonth($conn, $month, $year)
+{
+  $data = ['totalTests' => 0, 'totalUsers' => 0, 'passedCount' => 0, 'failedCount' => 0, 'totalScore' => 0];
+  // Thực hiện thủ tục `getManagerTest` cho tháng được chỉ định
+  $sql = "CALL getManagerTest(NULL, ?, ?, NULL, NULL)";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("ii", $month, $year);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  while ($row = $result->fetch_assoc()) {
+    $data['totalTests']++;
+    $data['totalUsers']++;
+    $data['totalScore'] += $row['score'];
+
+    if ($row['result_status'] == 'Đạt') {
+      $data['passedCount']++;
+    } else {
+      $data['failedCount']++;
+    }
+  }
+
+  // Đóng statement sau khi dùng
+  $stmt->close();
+
+  return $data;
+}
+
+// Lấy dữ liệu cho tháng hiện tại và tháng trước
+$currentData = getDataByMonth($conn, $currentMonth, $currentYear);
+$previousData = getDataByMonth($conn, $previousMonth, $previousYear);
+
+// Tính tỷ lệ phần trăm
+function calculatePercentageChange($current, $previous)
+{
+  if ($previous == 0) {
+    return 0; // Tránh chia cho 0
+  }
+  return round((($current - $previous) / $previous) * 100, 2);
+}
+// Tính phần trăm cho các thông số
+$totalTestsPercentage = calculatePercentageChange($currentData['totalTests'], $previousData['totalTests']);
+$totalUsersPercentage = calculatePercentageChange($currentData['totalUsers'], $previousData['totalUsers']);
+$passFailPercentage = calculatePercentageChange($currentData['passedCount'], $previousData['passedCount']);
+$averageScorePercentage = calculatePercentageChange(
+  $currentData['totalScore'] / max($currentData['totalTests'], 1),
+  $previousData['totalScore'] / max($previousData['totalTests'], 1)
+);
+function getYearlyData($conn, $year)
+{
+  $monthlyData = [];
+
+  for ($month = 1; $month <= 12; $month++) {
+    $data = ['totalTests' => 0, 'totalUsers' => 0, 'passedCount' => 0, 'failedCount' => 0, 'totalScore' => 0];
+
+    // Thực hiện thủ tục `getManagerTest` cho tháng được chỉ định
+    $sql = "CALL getManagerTest(NULL, ?, ?, NULL, NULL)";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+      die("Lỗi chuẩn bị câu lệnh: " . $conn->error);
+    }
+    $stmt->bind_param("ii", $month, $year);
+    if (!$stmt->execute()) {
+      die("Lỗi thực thi câu lệnh: " . $stmt->error);
+    }
+
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+      $data['totalTests']++;
+      if ($row['manv']) {
+        $data['totalUsers']++;
+      }
+      $data['totalScore'] += $row['score'];
+
+      if ($row['result_status'] == 'Đạt') {
+        $data['passedCount']++;
+      } else {
+        $data['failedCount']++;
+      }
+    }
+
+    // Đóng statement sau khi dùng
+    $stmt->close();
+
+    $monthlyData[$month] = $data;
+  }
+
+  return $monthlyData;
+}
+// Năm hiện tại
+$currentYear = date('Y');
+// Lấy dữ liệu cho từng tháng trong năm hiện tại
+$yearlyData = getYearlyData($conn, $currentYear);
+// Chuẩn bị dữ liệu cho biểu đồ
+$months = [];
+$totalTests = [];
+$totalUsers = [];
+$passedCounts = [];
+$averageScores = [];
+
+foreach ($yearlyData as $month => $data) {
+  $months[] = date('F', mktime(0, 0, 0, $month, 1)); // Tên tháng
+  $totalTests[] = $data['totalTests'];
+  $totalUsers[] = $data['totalUsers'];
+  $passedCounts[] = $data['passedCount'];
+  $averageScores[] = $data['totalTests'] > 0 ? round($data['totalScore'] / $data['totalTests'], 2) : 0;
+}
+// Trả về dữ liệu dưới dạng JSON
+$sql = "SELECT manage_test.name, department.name AS department_name, manage_test.UpdateTime
+        FROM manage_test
+        JOIN department ON manage_test.department_id = department.id
+        WHERE manage_test.IsDeleted = 0 AND manage_test.IsActive = 1
+        ORDER BY department.name, manage_test.UpdateTime";
+$result = $conn->query($sql);
 
 
-// if (!isset($_SESSION['adminId'])) {
-//     header("Location: sign-in.php");
-//     exit();
-// }
-
-// Nếu đã đăng nhập, hiển thị nội dung của trang dashboard
+$department = $conn->query('SELECT name, UpdateTime FROM department WHERE IsDeleted = 0 AND IsActive = 1');
+// Đóng kết nối
+$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <?php include './share/share_head.php'; ?>
 
 <body class="g-sidenav-show   bg-gray-100">
   <div class="min-height-300 bg-primary position-absolute w-100"></div>
-
-  <?php 
-  include './assets/common/sidebar.php'; 
-  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <?php
+  include './assets/common/sidebar.php';
   // Kết nối cơ sở dữ liệu
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-$conn->set_charset("utf8");
-
-// Kiểm tra kết nối
-if ($conn->connect_error) {
+  $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+  $conn->set_charset("utf8");
+  // Kiểm tra kết nối
+  if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
-}
-$conn->close();
-  
-  
-  
+  }
+  $conn->close();
   ?>
   <main class="main-content position-relative border-radius-lg ">
-    <!-- Navbar -->
-     
     <?php
     $pageTitle = "Dashboard";
-     include('./assets/common/nav_main.php') ?>
+    include('./assets/common/nav_main.php') ?>
     <!-- End Navbar -->
     <div class="container-fluid py-4">
       <div class="row">
@@ -48,19 +172,18 @@ $conn->close();
               <div class="row">
                 <div class="col-8">
                   <div class="numbers">
-                    <p class="text-sm mb-0 text-uppercase font-weight-bold">Today's Money</p>
-                    <h5 class="font-weight-bolder">
-                      $53,000
-                    </h5>
+                    <p class="text-sm mb-0 text-uppercase font-weight-bold">Bài test tháng này</p>
+                    <h5 class="font-weight-bolder"><?php echo $currentData['totalTests']; ?></h5>
                     <p class="mb-0">
-                      <span class="text-success text-sm font-weight-bolder">+55%</span>
-                      since yesterday
+                      <span class="<?php echo ($totalTestsPercentage >= 0) ? 'text-success' : 'text-danger'; ?> text-sm font-weight-bolder">
+                        <?php echo ($totalTestsPercentage >= 0 ? '+' : '') . $totalTestsPercentage; ?>%
+                      </span> so với tháng trước
                     </p>
                   </div>
                 </div>
                 <div class="col-4 text-end">
                   <div class="icon icon-shape bg-gradient-primary shadow-primary text-center rounded-circle">
-                    <i class="ni ni-money-coins text-lg opacity-10" aria-hidden="true"></i>
+                    <i class="ni ni-paper-diploma text-lg opacity-10" aria-hidden="true"></i>
                   </div>
                 </div>
               </div>
@@ -73,13 +196,12 @@ $conn->close();
               <div class="row">
                 <div class="col-8">
                   <div class="numbers">
-                    <p class="text-sm mb-0 text-uppercase font-weight-bold">Today's Users</p>
-                    <h5 class="font-weight-bolder">
-                      2,300
-                    </h5>
+                    <p class="text-sm mb-0 text-uppercase font-weight-bold">Người làm trong tháng</p>
+                    <h5 class="font-weight-bolder"><?php echo $currentData['totalUsers']; ?></h5>
                     <p class="mb-0">
-                      <span class="text-success text-sm font-weight-bolder">+3%</span>
-                      since last week
+                      <span class="<?php echo ($totalUsersPercentage >= 0) ? 'text-success' : 'text-danger'; ?> text-sm font-weight-bolder">
+                        <?php echo ($totalUsersPercentage >= 0 ? '+' : '') . $totalUsersPercentage; ?>%
+                      </span> so với tuần trước
                     </p>
                   </div>
                 </div>
@@ -98,19 +220,18 @@ $conn->close();
               <div class="row">
                 <div class="col-8">
                   <div class="numbers">
-                    <p class="text-sm mb-0 text-uppercase font-weight-bold">New Clients</p>
-                    <h5 class="font-weight-bolder">
-                      +3,462
-                    </h5>
+                    <p class="text-sm mb-0 text-uppercase font-weight-bold">Passed and Failed</p>
+                    <h5 class="font-weight-bolder">Passed: <?php echo $currentData['passedCount']; ?>, Failed : <?php echo $currentData['failedCount']; ?></h5>
                     <p class="mb-0">
-                      <span class="text-danger text-sm font-weight-bolder">-2%</span>
-                      since last quarter
+                      <span class="<?php echo ($passFailPercentage >= 0) ? 'text-success' : 'text-danger'; ?> text-sm font-weight-bolder">
+                        <?php echo ($passFailPercentage >= 0 ? '+' : '') . $passFailPercentage; ?>%
+                      </span> so với quý trước
                     </p>
                   </div>
                 </div>
                 <div class="col-4 text-end">
                   <div class="icon icon-shape bg-gradient-success shadow-success text-center rounded-circle">
-                    <i class="ni ni-paper-diploma text-lg opacity-10" aria-hidden="true"></i>
+                    <i class="ni ni-chart-bar-32 text-lg opacity-10" aria-hidden="true"></i>
                   </div>
                 </div>
               </div>
@@ -123,18 +244,18 @@ $conn->close();
               <div class="row">
                 <div class="col-8">
                   <div class="numbers">
-                    <p class="text-sm mb-0 text-uppercase font-weight-bold">Sales</p>
-                    <h5 class="font-weight-bolder">
-                      $103,430
-                    </h5>
+                    <p class="text-sm mb-0 text-uppercase font-weight-bold">Kết quả bài kiểm tra</p>
+                    <h5 class="font-weight-bolder"><?php echo round($currentData['totalScore'] / max($currentData['totalTests'], 1), 2); ?>%</h5>
                     <p class="mb-0">
-                      <span class="text-success text-sm font-weight-bolder">+5%</span> than last month
+                      <span class="<?php echo ($averageScorePercentage >= 0) ? 'text-success' : 'text-danger'; ?> text-sm font-weight-bolder">
+                        <?php echo ($averageScorePercentage >= 0 ? '+' : '') . $averageScorePercentage; ?>%
+                      </span> so với tháng trước
                     </p>
                   </div>
                 </div>
                 <div class="col-4 text-end">
                   <div class="icon icon-shape bg-gradient-warning shadow-warning text-center rounded-circle">
-                    <i class="ni ni-cart text-lg opacity-10" aria-hidden="true"></i>
+                    <i class="ni ni-check-bold text-lg opacity-10" aria-hidden="true"></i>
                   </div>
                 </div>
               </div>
@@ -146,51 +267,107 @@ $conn->close();
         <div class="col-lg-7 mb-lg-0 mb-4">
           <div class="card z-index-2 h-100">
             <div class="card-header pb-0 pt-3 bg-transparent">
-              <h6 class="text-capitalize">Sales overview</h6>
+              <h6 class="text-capitalize">Tests overview</h6>
               <p class="text-sm mb-0">
                 <i class="fa fa-arrow-up text-success"></i>
-                <span class="font-weight-bold">4% more</span> in 2021
+                <span id="dynamic-percentage" class="font-weight-bold"></span> in <span id="dynamic-year"></span>
               </p>
             </div>
             <div class="card-body p-3">
               <div class="chart">
-                <canvas id="chart-line" class="chart-canvas" height="300"></canvas>
+                <canvas id="trainingChart" class="chart-canvas"></canvas>
               </div>
             </div>
           </div>
+          <script>
+            const ctx = document.getElementById('trainingChart').getContext('2d');
+            const trainingChart = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: <?= json_encode($months) ?>,
+                datasets: [{
+                    label: 'Tổng số bài kiểm tra',
+                    data: <?= json_encode($totalTests) ?>,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                  },
+                  {
+                    label: 'Tổng số người dùng',
+                    data: <?= json_encode($totalUsers) ?>,
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                  },
+                  {
+                    label: 'Số bài kiểm tra đạt',
+                    data: <?= json_encode($passedCounts) ?>,
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 1
+                  },
+                  {
+                    label: 'Điểm trung bình',
+                    data: <?= json_encode($averageScores) ?>,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                  }
+                ]
+              },
+              options: {
+                responsive: true,
+                scales: {
+                  y: {
+                    beginAtZero: true
+                  }
+                }
+              }
+            });
+          </script>
         </div>
         <div class="col-lg-5">
           <div class="card card-carousel overflow-hidden h-100 p-0">
             <div id="carouselExampleCaptions" class="carousel slide h-100" data-bs-ride="carousel">
               <div class="carousel-inner border-radius-lg h-100">
-                <div class="carousel-item h-100 active" style="background-image: url('./assets/img/carousel-1.jpg');
+                <div class="carousel-item h-100 active" style="background-image: url('./assets/img/company.jpg');
       background-size: cover;">
                   <div class="carousel-caption d-none d-md-block bottom-0 text-start start-0 ms-5">
                     <div class="icon icon-shape icon-sm bg-white text-center border-radius-md mb-3">
                       <i class="ni ni-camera-compact text-dark opacity-10"></i>
                     </div>
-                    <h5 class="text-white mb-1">Get started with Argon</h5>
-                    <p>There’s nothing I really wanted to do in life that I wasn’t able to get good at.</p>
+                    <h5 class="text-white mb-1">Get started with ArmCuff Forms</h5>
+                    <p>You can easily manage all the tests of your department.</p>
                   </div>
                 </div>
-                <div class="carousel-item h-100" style="background-image: url('./assets/img/carousel-2.jpg');
-      background-size: cover;">
+                <div class="carousel-item h-100" style="background-image: url('./assets/img/login-cover.png');
+                      background-size: cover;">
                   <div class="carousel-caption d-none d-md-block bottom-0 text-start start-0 ms-5">
                     <div class="icon icon-shape icon-sm bg-white text-center border-radius-md mb-3">
                       <i class="ni ni-bulb-61 text-dark opacity-10"></i>
                     </div>
-                    <h5 class="text-white mb-1">Faster way to create web pages</h5>
-                    <p>That’s my skill. I’m not really specifically talented at anything except for the ability to learn.</p>
+                    <h5 class="text-white mb-1">Faster way to create tests</h5>
+                    <p>This can improve the training process for the members of your department.</p>
                   </div>
                 </div>
-                <div class="carousel-item h-100" style="background-image: url('./assets/img/carousel-3.jpg');
+                <div class="carousel-item h-100" style="background-image: url('./assets/img/caseat.jpg');
+                      background-size: cover;">
+                  <div class="carousel-caption d-none d-md-block bottom-0 text-start start-0 ms-5">
+                    <div class="icon icon-shape icon-sm bg-white text-center border-radius-md mb-3">
+                      <i class="ni ni-trophy text-dark opacity-10"></i>
+                    </div>
+                    <h5 class="text-white mb-1">Share your advice and opinions with us!</h5>
+                    <p>To improve and enhance the quality of the website.</p>
+                  </div>
+                </div>
+                <div class="carousel-item h-100" style="background-image: url('./assets/img/AIRBAG2.jpg');
       background-size: cover;">
                   <div class="carousel-caption d-none d-md-block bottom-0 text-start start-0 ms-5">
                     <div class="icon icon-shape icon-sm bg-white text-center border-radius-md mb-3">
                       <i class="ni ni-trophy text-dark opacity-10"></i>
                     </div>
-                    <h5 class="text-white mb-1">Share with us your design tips!</h5>
-                    <p>Don’t be afraid to be wrong because you can’t learn anything from a compliment.</p>
+                    <h5 class="text-white mb-1">Welcome to armcuff Forms!</h5>
+                    <p>Have a nice day!</p>
                   </div>
                 </div>
               </div>
@@ -207,211 +384,84 @@ $conn->close();
         </div>
       </div>
       <div class="row mt-4">
+
         <div class="col-lg-7 mb-lg-0 mb-4">
-          <div class="card ">
+          <div class="card">
             <div class="card-header pb-0 p-3">
-              <div class="d-flex justify-content-between">
-                <h6 class="mb-2">Sales by Country</h6>
-              </div>
+              <h6 class="mb-2">Danh sách Bài Test theo Bộ Phận</h6>
             </div>
-            <div class="table-responsive">
-              <table class="table align-items-center ">
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+              <table class="table align-items-center">
+                <thead>
+                  <tr>
+                    <th>Tên Bài Test</th>
+                    <th>Bộ Phận</th>
+                    <th>Ngày Tạo</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  <tr>
-                    <td class="w-30">
-                      <div class="d-flex px-2 py-1 align-items-center">
-                        <div>
-                          <img src="./assets/img/icons/flags/US.png" alt="Country flag">
-                        </div>
-                        <div class="ms-4">
-                          <p class="text-xs font-weight-bold mb-0">Country:</p>
-                          <h6 class="text-sm mb-0">United States</h6>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="text-center">
-                        <p class="text-xs font-weight-bold mb-0">Sales:</p>
-                        <h6 class="text-sm mb-0">2500</h6>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="text-center">
-                        <p class="text-xs font-weight-bold mb-0">Value:</p>
-                        <h6 class="text-sm mb-0">$230,900</h6>
-                      </div>
-                    </td>
-                    <td class="align-middle text-sm">
-                      <div class="col text-center">
-                        <p class="text-xs font-weight-bold mb-0">Bounce:</p>
-                        <h6 class="text-sm mb-0">29.9%</h6>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="w-30">
-                      <div class="d-flex px-2 py-1 align-items-center">
-                        <div>
-                          <img src="./assets/img/icons/flags/DE.png" alt="Country flag">
-                        </div>
-                        <div class="ms-4">
-                          <p class="text-xs font-weight-bold mb-0">Country:</p>
-                          <h6 class="text-sm mb-0">Germany</h6>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="text-center">
-                        <p class="text-xs font-weight-bold mb-0">Sales:</p>
-                        <h6 class="text-sm mb-0">3.900</h6>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="text-center">
-                        <p class="text-xs font-weight-bold mb-0">Value:</p>
-                        <h6 class="text-sm mb-0">$440,000</h6>
-                      </div>
-                    </td>
-                    <td class="align-middle text-sm">
-                      <div class="col text-center">
-                        <p class="text-xs font-weight-bold mb-0">Bounce:</p>
-                        <h6 class="text-sm mb-0">40.22%</h6>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="w-30">
-                      <div class="d-flex px-2 py-1 align-items-center">
-                        <div>
-                          <img src="./assets/img/icons/flags/GB.png" alt="Country flag">
-                        </div>
-                        <div class="ms-4">
-                          <p class="text-xs font-weight-bold mb-0">Country:</p>
-                          <h6 class="text-sm mb-0">Great Britain</h6>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="text-center">
-                        <p class="text-xs font-weight-bold mb-0">Sales:</p>
-                        <h6 class="text-sm mb-0">1.400</h6>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="text-center">
-                        <p class="text-xs font-weight-bold mb-0">Value:</p>
-                        <h6 class="text-sm mb-0">$190,700</h6>
-                      </div>
-                    </td>
-                    <td class="align-middle text-sm">
-                      <div class="col text-center">
-                        <p class="text-xs font-weight-bold mb-0">Bounce:</p>
-                        <h6 class="text-sm mb-0">23.44%</h6>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="w-30">
-                      <div class="d-flex px-2 py-1 align-items-center">
-                        <div>
-                          <img src="./assets/img/icons/flags/BR.png" alt="Country flag">
-                        </div>
-                        <div class="ms-4">
-                          <p class="text-xs font-weight-bold mb-0">Country:</p>
-                          <h6 class="text-sm mb-0">Brasil</h6>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="text-center">
-                        <p class="text-xs font-weight-bold mb-0">Sales:</p>
-                        <h6 class="text-sm mb-0">562</h6>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="text-center">
-                        <p class="text-xs font-weight-bold mb-0">Value:</p>
-                        <h6 class="text-sm mb-0">$143,960</h6>
-                      </div>
-                    </td>
-                    <td class="align-middle text-sm">
-                      <div class="col text-center">
-                        <p class="text-xs font-weight-bold mb-0">Bounce:</p>
-                        <h6 class="text-sm mb-0">32.14%</h6>
-                      </div>
-                    </td>
-                  </tr>
+                  <?php
+                  // Kiểm tra nếu có kết quả từ truy vấn
+                  if ($result->num_rows > 0) {
+                    // Lặp qua từng dòng dữ liệu
+                    while ($row = $result->fetch_assoc()) {
+                  ?>
+                      <tr>
+                        <td><?= htmlspecialchars($row['name']) ?></td>
+                        <td><?= htmlspecialchars($row['department_name']) ?></td>
+                        <td><?= htmlspecialchars($row['UpdateTime']) ?></td>
+                      </tr>
+                  <?php
+                    }
+                  } else {
+                    echo "<tr><td colspan='3' class='text-center'>Không có bài test nào</td></tr>";
+                  }
+                  ?>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
+
         <div class="col-lg-5">
           <div class="card">
             <div class="card-header pb-0 p-3">
-              <h6 class="mb-0">Categories</h6>
+              <h6 class="mb-0">Danh sách Bộ Phận</h6>
             </div>
-            <div class="card-body p-3">
+            <div class="card-body p-3" class="table-responsive" style="max-height: 500px; overflow-y: auto;">
               <ul class="list-group">
-                <li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
-                  <div class="d-flex align-items-center">
-                    <div class="icon icon-shape icon-sm me-3 bg-gradient-dark shadow text-center">
-                      <i class="ni ni-mobile-button text-white opacity-10"></i>
-                    </div>
-                    <div class="d-flex flex-column">
-                      <h6 class="mb-1 text-dark text-sm">Devices</h6>
-                      <span class="text-xs">250 in stock, <span class="font-weight-bold">346+ sold</span></span>
-                    </div>
-                  </div>
-                  <div class="d-flex">
-                    <button class="btn btn-link btn-icon-only btn-rounded btn-sm text-dark icon-move-right my-auto"><i class="ni ni-bold-right" aria-hidden="true"></i></button>
-                  </div>
-                </li>
-                <li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
-                  <div class="d-flex align-items-center">
-                    <div class="icon icon-shape icon-sm me-3 bg-gradient-dark shadow text-center">
-                      <i class="ni ni-tag text-white opacity-10"></i>
-                    </div>
-                    <div class="d-flex flex-column">
-                      <h6 class="mb-1 text-dark text-sm">Tickets</h6>
-                      <span class="text-xs">123 closed, <span class="font-weight-bold">15 open</span></span>
-                    </div>
-                  </div>
-                  <div class="d-flex">
-                    <button class="btn btn-link btn-icon-only btn-rounded btn-sm text-dark icon-move-right my-auto"><i class="ni ni-bold-right" aria-hidden="true"></i></button>
-                  </div>
-                </li>
-                <li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
-                  <div class="d-flex align-items-center">
-                    <div class="icon icon-shape icon-sm me-3 bg-gradient-dark shadow text-center">
-                      <i class="ni ni-box-2 text-white opacity-10"></i>
-                    </div>
-                    <div class="d-flex flex-column">
-                      <h6 class="mb-1 text-dark text-sm">Error logs</h6>
-                      <span class="text-xs">1 is active, <span class="font-weight-bold">40 closed</span></span>
-                    </div>
-                  </div>
-                  <div class="d-flex">
-                    <button class="btn btn-link btn-icon-only btn-rounded btn-sm text-dark icon-move-right my-auto"><i class="ni ni-bold-right" aria-hidden="true"></i></button>
-                  </div>
-                </li>
-                <li class="list-group-item border-0 d-flex justify-content-between ps-0 border-radius-lg">
-                  <div class="d-flex align-items-center">
-                    <div class="icon icon-shape icon-sm me-3 bg-gradient-dark shadow text-center">
-                      <i class="ni ni-satisfied text-white opacity-10"></i>
-                    </div>
-                    <div class="d-flex flex-column">
-                      <h6 class="mb-1 text-dark text-sm">Happy users</h6>
-                      <span class="text-xs font-weight-bold">+ 430</span>
-                    </div>
-                  </div>
-                  <div class="d-flex">
-                    <button class="btn btn-link btn-icon-only btn-rounded btn-sm text-dark icon-move-right my-auto"><i class="ni ni-bold-right" aria-hidden="true"></i></button>
-                  </div>
-                </li>
+                <?php
+
+
+                // Kiểm tra nếu có kết quả từ truy vấn
+                if ($department->num_rows > 0) {
+                  // Lặp qua từng dòng dữ liệu và hiển thị
+                  while ($row = $department->fetch_assoc()) {
+                ?>
+                    <li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
+                      <div class="d-flex align-items-center">
+                        <div class="icon icon-shape icon-sm me-3 bg-gradient-dark shadow text-center">
+                          <i class="ni ni-building text-white opacity-10"></i>
+                        </div>
+                        <div class="d-flex flex-column">
+                          <h6 class="mb-1 text-dark text-sm"><?= htmlspecialchars($row['name']) ?></h6>
+                          <span class="text-xs">Ngày tạo: <span class="font-weight-bold"><?= htmlspecialchars($row['UpdateTime']) ?></span></span>
+                        </div>
+                      </div>
+                      <div class="d-flex">
+                        <button class="btn btn-link btn-icon-only btn-rounded btn-sm text-dark icon-move-right my-auto"><i class="ni ni-bold-right" aria-hidden="true"></i></button>
+                      </div>
+                    </li>
+                <?php
+                  }
+                } else {
+                  echo "<li class='list-group-item border-0 text-center'>Không có bộ phận nào</li>";
+                }
+                ?>
               </ul>
             </div>
           </div>
+
         </div>
       </div>
       <footer class="footer pt-3  ">
@@ -428,16 +478,13 @@ $conn->close();
             <div class="col-lg-6">
               <ul class="nav nav-footer justify-content-center justify-content-lg-end">
                 <li class="nav-item">
-                  <a href="https://www.creative-tim.com" class="nav-link text-muted" target="_blank"> Matsuya </a>
+                  <a href="#" class="nav-link text-muted" target="_blank"> Matsuya </a>
                 </li>
                 <li class="nav-item">
-                  <a href="https://www.creative-tim.com/presentation" class="nav-link text-muted" target="_blank">About Us</a>
+                  <a href="#" class="nav-link text-muted" target="_blank">About Us</a>
                 </li>
                 <li class="nav-item">
-                  <a href="https://www.creative-tim.com/blog" class="nav-link text-muted" target="_blank">Blog</a>
-                </li>
-                <li class="nav-item">
-                  <a href="https://www.creative-tim.com/license" class="nav-link pe-0 text-muted" target="_blank">License</a>
+                  <a href="#" class="nav-link text-muted" target="_blank">Blog</a>
                 </li>
               </ul>
             </div>

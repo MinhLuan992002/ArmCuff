@@ -5,24 +5,23 @@ session_start();
 $main = new Main();
 $users = $main->getAllUsers();
 $department_name = $_SESSION['department'];
-$results = $main->getResults($manv = '', $day = '', $month = '', $year = '', $test_name = '', $department_name);
+$results = $main->getResults($manv = '', $day = '', $month = '', $year = '', $test_name = '', $department_name,$code='');
 ?>
 <style>
-form {
-    max-width: 100%;
-    padding: 10px;
-}
+    form {
+        max-width: 100%;
+        padding: 10px;
+    }
 
-.form-control-sm {
-    min-width: 120px; /* Điều chỉnh kích thước trường nhập liệu */
-}
+    .form-control-sm {
+        min-width: 120px;
+        /* Điều chỉnh kích thước trường nhập liệu */
+    }
 
-button {
-    padding: 6px 12px; /* Điều chỉnh padding nếu cần */
-}
-
-
-
+    button {
+        padding: 6px 12px;
+        /* Điều chỉnh padding nếu cần */
+    }
 </style>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,35 +45,34 @@ button {
                             <h6>Projects table</h6>
                         </div>
                         <div class="card-body px-0 pt-0 pb-2">
-                        <form method="GET" action="" class="mb-4 px-4">
-    <div class="d-flex justify-content-end align-items-center flex-wrap">
-        <div class="me-2">
-            <label for="test_name" class="form-label" style="font-size: 0.875rem;">Tên bài test</label>
-            <input type="text" name="test_name" class="form-control form-control-sm" id="test_name" style="width: 100px;" value="<?= htmlspecialchars($_GET['test_name'] ?? '') ?>">
-        </div>
-        <!-- <div class="me-2">
-            <label for="manv" class="form-label" style="font-size: 0.875rem;">Mã NV</label>
-            <input type="text" name="manv" class="form-control form-control-sm" id="manv" style="width: 100px;" value="<?= htmlspecialchars($_GET['manv'] ?? '') ?>">
-        </div> -->
-        <div class="me-2">
-            <label for="date" class="form-label" style="font-size: 0.875rem;">Ngày tháng</label>
-            <input type="date" name="date" class="form-control form-control-sm" id="date" style="width: 100px;" value="<?= htmlspecialchars($_GET['date'] ?? '') ?>">
-        </div>
-        <div class="me-2 ">
-
-            <button type="button" style="margin-top: 45px;" class="btn btn-success btn-sm" onclick="window.location.href='export_excel.php?test_name=<?= htmlspecialchars($_GET['test_name'] ?? '') ?>&manv=<?= htmlspecialchars($_GET['manv'] ?? '') ?>&date=<?= htmlspecialchars($_GET['date'] ?? '') ?>'">
-                Xuất Excel
-            </button>
-        </div>
-    </div>
-</form>
-
-
+                            <form method="GET" action="" id="searchForm" class="mb-4 px-4">
+                                <div class="d-flex justify-content-end align-items-center flex-wrap">
+                                    <div class="me-2">
+                                        <label for="test_name" class="form-label" style="font-size: 0.875rem;">Tên bài</label>
+                                        <input type="text" name="test_name" class="form-control form-control-sm" id="test_name" style="width: 100px;" value="<?= htmlspecialchars($_GET['test_name'] ?? '') ?>">
+                                    </div>
+                                    <div class="me-2">
+                                        <label for="manv" class="form-label" style="font-size: 0.875rem;">Mã nv</label>
+                                        <input type="text" name="manv" class="form-control form-control-sm" id="manv" style="width: 100px;" value="<?= htmlspecialchars($_GET['manv'] ?? '') ?>">
+                                    </div>
+                                    <div class="me-2">
+                                        <label for="date" class="form-label" style="font-size: 0.875rem;">Ngày tháng</label>
+                                        <input type="date" name="date" class="form-control form-control-sm" id="date" style="width: 100px;" value="<?= htmlspecialchars($_GET['date'] ?? '') ?>">
+                                    </div>
+                                    <div class="me-2">
+                                        <button type="button" style="margin-top: 45px;" class="btn btn-success btn-sm" onclick="exportToExcel()">
+                                            Xuất Excel
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
 
                             <div class="table-responsive p-0">
+                            <form action="export_excel.php" method="post">
                                 <table class="table align-items-center justify-content-center mb-0">
-                                    <thead>
+                                    <!-- <thead>
                                         <tr>
+                                            <th><input  style="margin-left: 0px;" type="checkbox" id="checkAll"></th>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">STT</th>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Mã nv</th>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Tên bài test</th>
@@ -84,77 +82,12 @@ button {
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Thời gian</th>
                                             <th></th>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($results as $row): ?>
-                                            <tr>
-                                                <td>
-                                                    <p style="margin-left: 22px;" class="text-sm font-weight-bold mb-0"><?= $row['STT'] ?></p>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex flex-column justify-content-center">
-                                                        <h6 class="mb-0 text-sm"><?= htmlspecialchars($row['fullname']); ?></h6>
-                                                        <p class="text-xs text-secondary mb-0"><?= htmlspecialchars($row['manv']); ?></p>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex flex-column justify-content-center">
-                                                        <p class="text-xs font-weight-bold mb-0"><?= htmlspecialchars($row['test_name']); ?></p>
+                                    </thead> -->
+                                    <tbody id="tbody">
 
-                                                    </div>
-                                                </td>
-                                                <td>
-
-                                                    <div class="d-flex flex-column justify-content-center ">
-                                                        <p class="mb-0 text-sm"><?= htmlspecialchars($row['correct_answers']); ?></p>
-
-                                                    </div>
-
-                                                <td>
-                                                    <span class="text-xs font-weight-bold 
-                      <?php if ($row['result_status'] == 'Đạt') {
-                                                echo 'text-success';
-                                            } else {
-                                                echo 'text-danger';
-                                            } ?>">
-                                                        <?= htmlspecialchars($row['result_status']) ?>
-                                                    </span>
-
-                                                </td>
-                                                <td class="align-middle text-center">
-                                                    <div class="d-flex align-items-center justify-content-center">
-                                                        <span class="me-2 text-xs font-weight-bold"><?= $row['score'] ?>%</span>
-                                                        <div>
-                                                            <div class="progress">
-                                                                <div class="progress-bar bg-gradient-<?= $row['score'] >= 100 ? 'success' : 'danger' ?>" role="progressbar" aria-valuenow="<?= $row['score'] ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?= $row['score'] ?>%;"></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex flex-column justify-content-center ">
-                                                        <p class="mb-0 text-sm"><?= date('d/m/y', strtotime($row['test_date'])); ?></p>
-
-                                                    </div>
-                                                </td>
-                                                <td class="align-middle">
-                                                    <button class="btn btn-link text-secondary mb-0" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                                                        <i class="fa fa-ellipsis-v text-xs"></i>
-                                                    </button>
-                                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-                                                        <li><a class="dropdown-item" onclick="editResult('<?php echo htmlspecialchars($row['code']); ?>')" data-bs-toggle="modal" data-bs-target="#resultModal" href="#">Edit</a></li>
-                                                        <li><a class="dropdown-item" onclick="loadResult('<?php echo htmlspecialchars($row['code']); ?>')" data-bs-toggle="modal" data-bs-target="#resultModal" href="#">View</a></li>
-
-                                                        <!-- Kết thúc ul ở đây -->
-
-                                                </td>
-
-
-
-                                            </tr>
-                                        <?php endforeach; ?>
                                     </tbody>
                                 </table>
+                                                            </form>
                                 <!-- Modal -->
                                 <div class="modal fade" id="resultModal" tabindex="-1" role="dialog" aria-labelledby="resultModalLabel" aria-hidden="true">
                                     <div class="modal-dialog modal-lg" role="document">
@@ -317,6 +250,70 @@ button {
     <script async defer src="https://buttons.github.io/buttons.js"></script>
     <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
     <script src="./assets/js/argon-dashboard.min.js?v=2.0.4"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+$(document).ready(function() {
+    // Gọi AJAX khi tải trang lần đầu để hiển thị dữ liệu mặc định
+    fetchResults();
+
+    // Gọi AJAX khi nhập liệu vào form tìm kiếm
+    $('#searchForm input').on('input', function() {
+        fetchResults();
+    });
+
+    // Hàm AJAX để tải dữ liệu từ `fetch_results.php`
+    function fetchResults() {
+        const test_name = $('#test_name').val();
+        const manv = $('#manv').val();
+        const date = $('#date').val();
+        $.ajax({
+            url: 'fetch_results.php',
+            method: 'GET',
+            data: {
+                test_name,
+                manv,
+                date
+            },
+            success: function(data) {
+                $('#tbody').html(data); // Cập nhật nội dung `tbody`
+            }
+        });
+    }
+});
+
+
+
+    </script>
+
+<script>
+function exportToExcel() {
+    // Lấy tất cả checkbox được chọn
+    const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+    
+    // Tạo một mảng để lưu mã code
+    const codes = [];
+    
+    // Duyệt qua các checkbox được chọn và lấy giá trị của chúng
+    checkedCheckboxes.forEach(checkbox => {
+        codes.push(checkbox.value); // Lưu mã code vào mảng
+    });
+
+    // Kiểm tra xem có mã code nào được chọn không
+    if (codes.length === 0) {
+        alert('Vui lòng chọn ít nhất một bản ghi trước khi xuất Excel.');
+        return;
+    }
+
+    // Tạo URL cho yêu cầu xuất với các mã code
+    const url = `export_excel.php?codes=${encodeURIComponent(codes.join(','))}`;
+    
+    // Chuyển hướng tới URL để tải file Excel
+    window.location.href = url;
+}
+
+</script>
+
+
 </body>
 
 </html>
