@@ -1,0 +1,100 @@
+CREATE DEFINER=`root`@`localhost` PROCEDURE `getCheckAnswerUser`(
+    IN day INT,
+    IN month INT,
+    IN year INT,
+    IN manv VARCHAR(50),
+    IN test_name VARCHAR(255),
+    IN department_name VARCHAR(255)  -- Thêm tham số department_name
+)
+BEGIN
+    SELECT
+        ROW_NUMBER() OVER (ORDER BY ua.manv, mt.name) AS STT,  -- Sắp xếp theo manv trước
+        ua.manv,
+        u.fullname,
+        d.name AS department_name,  -- Thêm tên phòng ban từ bảng department
+        mt.name AS test_name,
+        ua.code,  -- Thêm cột code từ bảng user_answer
+        COUNT(CASE WHEN ua.answer = 1 THEN 1 END) AS correct_answers,
+        COUNT(*) AS total_questions,
+        MAX(ua.created_at) AS test_date,
+        ROUND(COUNT(CASE WHEN ua.answer = 1 THEN 1 END) / COUNT(*) * 100) AS score,
+        CASE 
+            WHEN ROUND(COUNT(CASE WHEN ua.answer = 1 THEN 1 END) / COUNT(*) * 100) = 100 THEN 'Đạt' 
+            ELSE 'Không Đạt' 
+        END AS result_status,
+        mt.id AS test_id
+    FROM user_answer ua
+        JOIN users u ON ua.manv = u.manv
+        JOIN manage_test mt ON ua.test_id = mt.id
+        LEFT JOIN department d ON ua.department_id = d.id  -- Sửa lại join theo user_answer.department_id
+    WHERE (manv IS NULL OR ua.manv = manv)
+      AND (day IS NULL OR DAY(ua.created_at) = day)
+      AND (month IS NULL OR MONTH(ua.created_at) = month)
+      AND (year IS NULL OR YEAR(ua.created_at) = year)
+      AND (department_name IS NULL OR d.name LIKE CONCAT('%', department_name, '%'))  -- Lọc theo department_name
+      AND (test_name IS NULL OR mt.name LIKE CONCAT('%', test_name, '%'))  -- Lọc theo tên bài test
+    GROUP BY ua.manv,
+             u.fullname,
+             d.name,  -- Thêm department name vào GROUP BY
+             mt.name,
+             mt.id,
+             ua.code  -- Thêm ua.code vào GROUP BY
+    ORDER BY ua.manv ASC, mt.name;  -- Sắp xếp theo manv tăng dần
+END
+
+
+
+<span>II. Kiểm tra kích thước: </span><br> <hr>1/ Kích thước vị trí số ① ③    là:
+
+
+1/ Kích thước vị trí số ① ③  là :
+
+
+II. Kiểm tra kích thước:		
+1/ Kích thước vị trí số ① ② ③  là :		
+
+<span>II. Kiểm tra kích thước:  </span><br> <hr>1/ Kích thước vị trí số ①  là :
+<span>I. Điều kiện hàn:</span><br> <hr>1/ Dòng điện hàn là:
+<span>IV. Xử lý hàng Huỷ và hàng Test: </span><br> <hr>1/ Khi phát sinh hàng lỗi hoặc nguyên liệu lỗi thì:
+<span>V. Xử lý sự cố bất thường:</span><br> <hr>1/ Chọn câu trả lời đúng?
+
+
+<span>III. Kiểm tra ngoại quan  </span><br> <hr>1/Kiểm tra ngoại quan phải chú ý những vị trí nào, hãy kể tên nhũng vị trí đó.
+
+
+
+
+
+
+
+
+				
+
+
+
+
+			
+
+
+
+
+
+
+				
+
+
+
+INSERT INTO `questions` (`id`, `name`, `question_image`, `departmentID`, `manage_test_id`, `IsDeleted`, `IsActive`, `UpdateTime`, `DeletedTime`, `Code`) VALUES						
+('', '<span>I. Điều kiện hàn:</span><br> <hr>1/ Dòng điện hàn là:', NULL, 3, 67, 0, 1, '2024-11-07 08:28:13', NULL, NULL),
+('', '2/ Thời gian hàn là :\r\n', NULL, 3, 67, 0, 1, '2024-11-07 05:53:46', NULL, NULL),
+('', '3/Áp lực  hơi là:', NULL, 3, 67, 0, 1, '2024-11-07 05:54:21', NULL, NULL),
+('', '4/ Thơi gian làm mát là :\r\n', NULL, 3, 67, 0, 1, '2024-11-07 05:54:21', NULL, NULL),
+('', '5/ Nhiệt độ phòng là :\r\n', NULL, 3, 67, 0, 1, '2024-11-07 05:55:04', NULL, NULL),
+('', '6/ Ẩm độ là :\r\n', NULL, 3, 67, 0, 1, '2024-11-07 05:55:32', NULL, NULL),
+('', '7/ Thời gian giữ là :\r\n', NULL, 3, 67, 0, 1, '2024-11-07 05:56:17', NULL, NULL),
+('', '8/ Nhiệt độ khuôn là :\r\n', NULL, 3, 67, 0, 1, '2024-11-07 08:51:52', NULL, NULL),
+('', '<span>II. Kiểm tra kích thước:  </span><br> <hr>1/ Kích thước vị trí số ①  là :', NULL, 3, 67, 0, 1, '2024-11-07 08:47:32', NULL, NULL),
+('', '<span>2/ Kích thước vị trí số ② là:', NULL, 3, 67, 0, 1, '2024-11-07 08:47:19', NULL, NULL),
+('', '<span>III. Kiểm tra ngoại quan  </span><br> <hr>1/Kiểm tra ngoại quan phải chú ý những vị trí nào, hãy kể tên nhũng vị trí đó.', NULL, 3, 67, 0, 1, '2024-11-07 08:52:31', NULL, NULL),
+('', '<span>IV. Xử lý hàng Huỷ và hàng Test: </span><br> <hr>1/ Khi phát sinh hàng lỗi hoặc nguyên liệu lỗi thì:', NULL, 3, 67, 0, 1, '2024-11-07 08:52:39', NULL, NULL),
+('', '2/ Khi làm hàng Test thì :\r\n', NULL, 3, 67, 0, 1, '2024-11-07 08:34:54', NULL, NULL),
