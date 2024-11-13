@@ -9,7 +9,7 @@
 session_start();
 if (!isset($_SESSION['adminLogin']) || $_SESSION['adminLogin'] !== true) {
     header("Location: sign-in.php");
-    exit(); // Chưa đăng nhập, chuyển hướng về trang đăng nhập
+    exit();
 }
 
 ?>
@@ -59,11 +59,11 @@ if (!isset($_SESSION['adminLogin']) || $_SESSION['adminLogin'] !== true) {
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link " href="./add-test.php">
+          <a class="nav-link " href="./edit-content.php">
             <div class="icon icon-shape icon-sm border-radius-md text-center me-2 d-flex align-items-center justify-content-center">
               <i class="fa-solid fa-file-circle-plus text-danger text-sm opacity-10"></i>
             </div>
-            <span class="nav-link-text ms-1">Add Test </span>
+            <span class="nav-link-text ms-1">Edit Content</span>
           </a>
         </li>
         <li class="nav-item mt-3">
@@ -95,5 +95,4 @@ if (!isset($_SESSION['adminLogin']) || $_SESSION['adminLogin'] !== true) {
         </li>
       </ul>
     </div>
-
 </aside>

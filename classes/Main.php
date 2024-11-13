@@ -360,5 +360,33 @@ class Main
         $stmt = $this->db->prepare("CALL AddUserAnswer(?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$manv, $question_id, $answer_id, $test_id, $code, $testType, $result_test]);
     }
+
+    public function addTest($testName, $departmentId) {
+        $sql = "INSERT INTO manage_test (name, IsDeleted, IsActive, UpdateTime, department_id) 
+                VALUES (:name, 0, 1, NOW(), :department_id)";
+        $stmt = $this->db->getPDO()->prepare($sql);
+        $stmt->bindParam(':name', $testName, PDO::PARAM_STR);
+        $stmt->bindParam(':department_id', $departmentId, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            // Lấy ID của bản ghi vừa chèn bằng lastInsertId
+            return $this->db->getPDO()->lastInsertId();
+        }
+        return false;
+    }
+    public function addDepartment($departmentName) {
+        $sql = "INSERT INTO department (name, IsDeleted, IsActive, UpdateTime) 
+                VALUES (:name, 0, 1, NOW())";
+        $stmt = $this->db->getPDO()->prepare($sql);
+        $stmt->bindParam(':name', $departmentName, PDO::PARAM_STR);
+    
+        if ($stmt->execute()) {
+            // Lấy ID của phòng ban vừa thêm bằng lastInsertId
+            return $this->db->getPDO()->lastInsertId();
+        }
+        return false; // Trả về false nếu có lỗi
+    }
+    
 }
+
 

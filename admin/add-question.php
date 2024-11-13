@@ -166,31 +166,93 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               <!-- Form để thêm câu hỏi -->
               <form id="add-question-form" action="add-question.php" method="post" enctype="multipart/form-data">
 
-                <div class="row">
-                  <div class="col-6 mb-3">
-                    <label for="manage-test-id" class="form-label">Chọn bài kiểm tra</label>
-                    <select class="form-control" id="manage-test-id" name="manage-test-id" required>
-                      <option value="">Chọn bài kiểm tra</option>
-                      <?php if (!empty($manageTests)): ?>
-                        <?php foreach ($manageTests as $test): ?>
-                          <option value="<?php echo $test['id']; ?>"><?php echo $test['name']; ?></option>
-                        <?php endforeach; ?>
-                      <?php endif; ?>
-                    </select>
+
+                <script src="./assets/js/core/jquery-3.6.0.min.js"></script>
+                <!-- Notification Alert -->
+                <div id="notification" class="alert d-none" role="alert"></div>
+                <div class=" mt-3">
+                  <div class="row">
+                    <!-- Dropdown chọn bài kiểm tra với nút thêm mới bên cạnh -->
+                    <div class="col-6 mb-3 d-flex align-items-end">
+                      <div class="w-100">
+                        <label for="manage-test-id" class="form-label">Chọn bài kiểm tra</label>
+                        <select class="form-control" id="manage-test-id" name="manage-test-id" required>
+                          <option value="">Chọn bài kiểm tra</option>
+                          <?php if (!empty($manageTests)): ?>
+                            <?php foreach ($manageTests as $test): ?>
+                              <option value="<?php echo $test['id']; ?>"><?php echo $test['name']; ?></option>
+                            <?php endforeach; ?>
+                          <?php endif; ?>
+                        </select>
+                      </div>
+                      <div class="ms-2">
+                        <i style="font-size: 29px;" data-bs-toggle="modal" data-bs-target="#addTestModal" class="fa-regular fa-square-plus text-primary"></i>
+                      </div>
+                    </div>
+
+                    <!-- Dropdown chọn phòng ban với nút thêm mới bên cạnh -->
+                    <div class="col-6 mb-3 d-flex align-items-end">
+                      <div class="w-100">
+                        <label for="department-id" class="form-label">Chọn phòng ban</label>
+                        <select class="form-control" id="department-id" name="department-id" required>
+                          <option value="">Chọn phòng ban</option>
+                          <?php if (!empty($departments)): ?>
+                            <?php foreach ($departments as $department): ?>
+                              <option value="<?php echo $department['id']; ?>"><?php echo $department['name']; ?></option>
+                            <?php endforeach; ?>
+                          <?php endif; ?>
+                        </select>
+                      </div>
+                      <div class=" btn-outline-primary ms-2">
+                        <i style="font-size: 29px;" data-bs-toggle="modal" data-bs-target="#addDepartmentModal" class="fa-regular fa-square-plus text-primary"></i>
+                      </div>
+                    </div>
                   </div>
 
-                  <div class="col-6 mb-3">
-                    <label for="department-id" class="form-label">Chọn phòng ban</label>
-                    <select class="form-control" id="department-id" name="department-id" required>
-                      <option value="">Chọn phòng ban</option>
-                      <?php if (!empty($departments)): ?>
-                        <?php foreach ($departments as $department): ?>
-                          <option value="<?php echo $department['id']; ?>"><?php echo $department['name']; ?></option>
-                        <?php endforeach; ?>
-                      <?php endif; ?>
-                    </select>
+
+
+                  <!-- Modal thêm bài kiểm tra mới -->
+                  <div class="modal fade" id="addTestModal" tabindex="-1" aria-labelledby="addTestModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title">Thêm bài kiểm tra mới</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                          <input type="text" id="new-test-name" class="form-control" placeholder="Nhập tên bài kiểm tra">
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                          <button type="button" class="btn btn-primary" id="save-new-test">Lưu</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Modal thêm phòng ban mới -->
+                  <div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-labelledby="addDepartmentModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title">Thêm phòng ban mới</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                          <input type="text" id="new-department-name" class="form-control" placeholder="Nhập tên phòng ban">
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                          <button type="button" class="btn btn-primary" id="save-new-department">Lưu</button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+
+
+
                 <!-- Câu hỏi -->
                 <div class="mb-3">
                   <label for="question-text" class="form-label">Câu hỏi</label>
@@ -237,24 +299,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </div>
 
     </div>
-    
+
     <script src="./assets/js/core/popper.min.js"></script>
-  <script src="./assets/js/core/bootstrap.min.js"></script>
-  <script src="./assets/js/plugins/perfect-scrollbar.min.js"></script>
-  <script src="./assets/js/plugins/smooth-scrollbar.min.js"></script>
-  <script>
-    var win = navigator.platform.indexOf('Win') > -1;
-    if (win && document.querySelector('#sidenav-scrollbar')) {
-      var options = {
-        damping: '0.5'
+    <script src="./assets/js/core/bootstrap.min.js"></script>
+    <script src="./assets/js/plugins/perfect-scrollbar.min.js"></script>
+    <script src="./assets/js/plugins/smooth-scrollbar.min.js"></script>
+    <script>
+      var win = navigator.platform.indexOf('Win') > -1;
+      if (win && document.querySelector('#sidenav-scrollbar')) {
+        var options = {
+          damping: '0.5'
+        }
+        Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
       }
-      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
-    }
-  </script>
-  <!-- Github buttons -->
-  <!-- <script async defer src="https://buttons.github.io/buttons.js"></script> -->
-  <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
-  <script src="./assets/js/argon-dashboard.min.js?v=2.0.4"></script>
+    </script>
+    <!-- Github buttons -->
+    <!-- <script async defer src="https://buttons.github.io/buttons.js"></script> -->
+    <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
+    <script src="./assets/js/argon-dashboard.min.js?v=2.0.4"></script>
     <script>
       // Khi click vào khu vực chọn file, mở file dialog
       document.getElementById('file-upload-area').addEventListener('click', function() {
@@ -300,3 +362,65 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         document.getElementById('answers-container').appendChild(newAnswerBlock);
       });
     </script>
+                    <script>
+                  $(document).ready(function() {
+                    function showNotification(message, isSuccess) {
+                      const notification = $('#notification');
+                      notification.removeClass('d-none alert-success alert-danger');
+                      notification.addClass(isSuccess ? 'alert-success' : 'alert-danger').text(message).fadeIn();
+                      setTimeout(() => notification.fadeOut(), 3000); // Auto-hide after 3 seconds
+                    }
+
+                    // Lưu bài kiểm tra mới
+                    $('#save-new-test').on('click', function() {
+                      const testName = $('#new-test-name').val();
+                      const departmentId = $('#department-id').val();
+                      if (testName && departmentId) {
+                        $.post('add_test.php', {
+                          test_name: testName,
+                          department_id: departmentId
+                        }, function(response) {
+                          if (response.status === 'success') {
+                            $('#manage-test-id').append(new Option(testName, response.new_test_id, true, true));
+                            $('#addTestModal').modal('hide');
+                            $('#new-test-name').val('');
+                            showNotification('Thêm bài kiểm tra thành công!', true);
+                          } else {
+                            showNotification(response.message || 'Không thể thêm bài kiểm tra.', false);
+                          }
+                        }, 'json').fail(() => showNotification('Lỗi khi thêm bài kiểm tra.', false));
+                      } else {
+                        showNotification("Vui lòng nhập tên bài kiểm tra và chọn phòng ban.", false);
+                      }
+                    });
+
+                    // Lưu phòng ban mới
+                    $('#save-new-department').on('click', function() {
+                      const departmentName = $('#new-department-name').val();
+                      if (departmentName) {
+                        $.post('add_department.php', {
+                          department_name: departmentName
+                        }, function(response) {
+                          if (response.status === 'success') {
+                            $('#department-id').append(new Option(departmentName, response.new_department_id, true, true));
+                            $('#addDepartmentModal').modal('hide');
+                            $('#new-department-name').val('');
+                            showNotification('Thêm phòng ban thành công!', true);
+                          } else {
+                            showNotification(response.message || 'Không thể thêm phòng ban.', false);
+                          }
+                        }, 'json').fail(() => showNotification('Lỗi khi thêm phòng ban.', false));
+                      } else {
+                        showNotification("Vui lòng nhập tên phòng ban.", false);
+                      }
+                    });
+
+                    // Ensure page scrolls after modals close
+                    $('#addTestModal, #addDepartmentModal').on('hidden.bs.modal', function() {
+                      $('body').removeClass('modal-open');
+                      $('.modal-backdrop').remove(); // Remove lingering backdrop
+                    });
+                  });
+                </script>
+
+                <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script> -->

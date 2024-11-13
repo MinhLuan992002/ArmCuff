@@ -16,7 +16,7 @@ class Database {
         $this->pass = DB_PASS;
         $this->dbname = DB_NAME;
         
-        $dsn = "mysql:host={$this->host};dbname={$this->dbname}";
+        $dsn = "mysql:host={$this->host};dbname={$this->dbname};charset=utf8";
         try {
             $this->pdo = new PDO($dsn, $this->user, $this->pass);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -25,7 +25,9 @@ class Database {
             die("Connection failed: Please check the error log.");
         }
     }
-
+    public function getPDO() {
+        return $this->pdo;
+    }
     public function prepare($query) {
         return $this->pdo->prepare($query);
     }
