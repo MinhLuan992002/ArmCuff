@@ -98,7 +98,7 @@ $results = $main->getResults($manv, $day, $month, $year, $test_name, $department
                         <a class='dropdown-item' onclick='deleteResult("<?= htmlspecialchars($row["code"]) ?>")' href='#'>Delete</a>
                     </li> -->
                     <?php
-                    if ($_SESSION['department_id'] == 'null') {
+                    if ($_SESSION['department_id'] = 'null') {
                         echo '<li>';
                         echo '<a class="dropdown-item" href="#" onclick="deleteResult(\'' . htmlspecialchars($row['code']) . '\')">Delete</a>';
                         echo '</li>';

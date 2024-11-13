@@ -146,12 +146,15 @@ $testDetails = $exam->getQuestionsAndAnswers($test_id); // Lấy câu hỏi và 
 
 <body>
     <div class="container">
+        
         <div class="card">
-            <div class="card-header">
-                <h3>Bài kiểm tra: <?php echo htmlspecialchars($testName); ?></h3>
-                <a href="export_pdf.php?code=<?php echo htmlspecialchars($code); ?>" class="btn export-pdf-btn">
+        <a href="export_pdf.php?code=<?php echo htmlspecialchars($code); ?>" class="btn export-pdf-btn">
     <i class="fas fa-file-pdf"></i> Xuất PDF
 </a>
+            <div class="card-header">
+                
+                <h3>Bài kiểm tra: <?php echo htmlspecialchars($testName); ?></h3>
+
             </div>
             <div class="card-body">
                 <div class="mb-4">

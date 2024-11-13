@@ -26,7 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['changePassword'])) {
     $changePasswordMsg = $ad->changePassword($_POST);
 }
 ?>
-<div class="form_login">
+
+    </div>
+  </div>
+  <main class="main-content  mt-0">
+    <section>
+      <div class="page-header min-vh-100">
+        <div class="container">
+          <div class="row">
+          <div style="color: white;" class="form_login" >
     <?php
         if (isset($adminData)) {
             echo $adminData;
@@ -37,16 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['changePassword'])) {
     ?>
         <!-- End Navbar -->
       </div>
-    </div>
-  </div>
-  <main class="main-content  mt-0">
-    <section>
-      <div class="page-header min-vh-100">
-        <div class="container">
-          <div class="row">
             <div class="col-xl-4 col-lg-5 col-md-7 d-flex flex-column mx-lg-0 mx-auto">
               <div class="card card-plain">
+                
                 <div class="card-header pb-0 text-start">
+                  
                   <h4 class="font-weight-bolder">Sign In</h4>
                   <p class="mb-0">Enter your username and password to sign in</p>
                 </div>
@@ -91,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['changePassword'])) {
   <!--   Core JS Files   -->
   <script src="./assets/js/core/popper.min.js"></script>
   <script src="./assets/js/core/bootstrap.min.js"></script>
-  <script src="./assets/js/plugins/perfect-scrollbar.min.js"></script>
+  <script src="./assetgit  s/js/plugins/perfect-scrollbar.min.js"></script>
   <script src="./assets/js/plugins/smooth-scrollbar.min.js"></script>
   <script>
     var win = navigator.platform.indexOf('Win') > -1;
@@ -102,9 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['changePassword'])) {
       Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
     }
   </script>
-  <!-- Github buttons -->
-  <!-- <script async defer src="https://buttons.github.io/buttons.js"></script> -->
-  <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
+
   <script src="./assets/js/argon-dashboard.min.js?v=2.0.4"></script>
 </body>
 
